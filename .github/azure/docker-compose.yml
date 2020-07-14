@@ -1,0 +1,144 @@
+version: '3'
+
+# Add your networks/volumes/services for your microservice
+services:
+  events_management1:
+    image: mysql/mysql-cluster:latest
+    volumes:
+      - ../../mysql.conf/my.cnf:/etc/my.cnf
+      - ../../mysql.conf/mysql-cluster.cnf:/etc/mysql-cluster.cnf
+      - events_mngt_data:/var/lib/mysql/data
+    command: ndb_mgmd
+    networks:
+      events_net:
+        ipv4_address: 192.168.0.2
+
+
+  events_ndb1:
+    image: mysql/mysql-cluster:latest
+    volumes:
+      - ../../mysql.conf/my.cnf:/etc/my.cnf
+      - ../../mysql.conf/mysql-cluster.cnf:/etc/mysql-cluster.cnf
+      - events_ndb1_data:/var/lib/mysql/data
+    command: ndbd
+    depends_on:
+      - events_management1
+    networks:
+      events_net:
+        ipv4_address: 192.168.0.3
+
+
+  events_ndb2:
+    image: mysql/mysql-cluster:latest
+    volumes:
+      - ../../mysql.conf/my.cnf:/etc/my.cnf
+      - ../../mysql.conf/mysql-cluster.cnf:/etc/mysql-cluster.cnf
+      - events_ndb2_data:/var/lib/mysql/data
+    command: ndbd
+    depends_on:
+      - events_management1
+    networks:
+      events_net:
+        ipv4_address: 192.168.0.4
+
+
+  events_mysql1:
+    image: mysql/mysql-cluster:latest
+    ports:
+      - 3306:3306
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: micro-ci-events
+      MYSQL_DATABASE: micro-ci-events
+      MYSQL_USER: micro-ci-events
+      MYSQL_PASSWORD: micro-ci-events
+    command: mysqld
+    depends_on:
+      - events_management1
+      - events_ndb1
+      - events_ndb2
+    volumes:
+       - ../../mysql.conf/my.cnf:/etc/my.cnf
+       - ../../mysql.conf/mysql-cluster.cnf:/etc/mysql-cluster.cnf
+    networks:
+      events_net:
+        ipv4_address: 192.168.0.10
+
+
+  micro-ci-events:
+    build: ../../.
+    image: micro-ci-events:latest
+    depends_on:
+      - events_management1
+      - events_ndb1
+      - events_ndb2
+      - events_mysql1
+    ports:
+      - 5000:5000
+    restart: always
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.micro-ci-events.rule=Host(`micro-ci-events`)
+      - traefik.http.routers.micro-ci-events.entryPoints=insecure
+    environment:
+      DB_NAME: micro-ci-events
+      DB_USER: micro-ci-events
+      DB_PASSWORD: micro-ci-events
+      DB_HOST: events_mysql1
+    networks:
+      events_net:
+
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: on-failure:10
+    environment:
+        RABBITMQ_ERLANG_COOKIE: QKSHDLBKSSBCLBSLU
+        RABBITMQ_DEFAULT_USER: admin
+        RABBITMQ_DEFAULT_PASS: admin
+        RABBITMQ_DEFAULT_VHOST: /
+    ports:
+        - 5672:5672
+        - 15672:15672
+    networks:
+      events_net:
+        ipv4_address: 192.168.0.12
+
+
+  traefik:
+    image: traefik:v2.2
+    command: --api.insecure=true --providers.docker
+    depends_on:
+      - micro-ci-events
+    ports:
+      - 83:80
+      - 8084:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../../traefik.conf/traefik.toml:/traefik.toml
+    networks:
+      events_net:
+        ipv4_address: 192.168.0.13
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - '8083:8080'
+    depends_on:
+      - events_mysql1
+    networks:
+      events_net:
+        ipv4_address: 192.168.0.14
+
+volumes:
+    events_mngt_data:
+    events_ndb1_data:
+    events_ndb2_data:
+
+networks:
+    events_net:
+        ipam:
+          driver: default
+          config:
+            - subnet: 192.168.0.0/16

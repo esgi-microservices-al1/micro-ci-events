@@ -1,5 +1,5 @@
-from api import api, app
-from api.controller import Index
+from app import api, app
+from app.controller.controller import Index
 
 
 api.add_resource(Index, "/")

@@ -1,4 +1,4 @@
-from api import Resource
+from app import Resource
 
 
 class Index(Resource):
