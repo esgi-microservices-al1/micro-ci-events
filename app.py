@@ -1,7 +1,6 @@
 from app import api, app
 from app.controller.controller import Index
 
-
 api.add_resource(Index, "/")
 
 if __name__ == '__main__':
