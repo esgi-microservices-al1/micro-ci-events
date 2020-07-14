@@ -1,9 +1,8 @@
-from api import app
+from api import api, app
+from api.controller import Index
 
-@app.route('/')
-def hello_world():
-    return 'Hello World!'
 
+api.add_resource(Index, "/")
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)
