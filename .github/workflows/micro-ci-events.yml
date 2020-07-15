@@ -13,7 +13,7 @@ jobs:
 
     # Add your build steps here
     - name: Build the docker-compose stack
-      run: chmod +x init_containers.sh && ./init_containers.sh
+      run: chmod +x start_service.sh && ./start_service.sh
     - name: Check running containers
       run: docker ps -a
 
