@@ -1,11 +1,11 @@
 import json, os
-from app.message_broker.send import MessageSender
+from app.message_broker import MessageSender
 
 
 class EventService(object):
     def __init__(self):
         self.failed_command = list()
-        self.sender = MessageSender(host=os.getenv("RABBIT_MQ_HOST", "rabbitmq"),
+        self.sender = MessageSender(host=os.getenv("RABBIT_MQ_HOST", "message_broker"),
                                     port=5672,
                                     username="admin",
                                     password="admin",

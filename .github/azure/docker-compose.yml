@@ -71,16 +71,11 @@ services:
             context: ../../.
             dockerfile: Dockerfile
         command: sh -c "/wait && python app.py"
+        #command: sh -c "/wait && /boot.sh"
         depends_on:
             - mysql1
-            - rabbitmq
-            - adminer
-            - consul
         links:
             - mysql1
-            - rabbitmq
-            - adminer
-            - consul
         ports:
             - 5000:5000
         restart: always
@@ -93,65 +88,70 @@ services:
             WAIT_HOSTS_TIMEOUT: 300
             WAIT_SLEEP_INTERVAL: 30
             WAIT_HOST_CONNECT_TIMEOUT: 30
-            RABBIT_MQ_HOST: rabbitmq
-            CONSUL_HOST: consul
+            RABBIT_MQ_HOST: micro-ci.westus2.cloudapp.azure.com
+            RABBIT_MQ_USER: esgi-al1
+            RABBIT_MQ_PASSWORD: g5Y86ck*uQ2&s57
+            RABBIT_MQ_PORT: 40700
+            RABBIT_MQ_QUEUE: al1.event.queue
+            CONSUL_HOST: micro-ci.westus2.cloudapp.azure.com
+            CONSUL_PORT: 40600
+            CONSUL_TOKEN: 874cfccc-7fb4-202b-cbdf-6f4c3fd5c5e2
         volumes:
             - ../../app:/events/app
         networks:
             app_net:
 
-    rabbitmq:
-        image: rabbitmq:3-management-alpine
-        restart: on-failure:10
-        environment:
-            RABBITMQ_ERLANG_COOKIE: QKSHDLBKSSBCLBSLU
-            RABBITMQ_DEFAULT_USER: admin
-            RABBITMQ_DEFAULT_PASS: admin
-            RABBITMQ_DEFAULT_VHOST: /
-        ports:
-            - 5672:5672
-            - 15672:15672
-        networks:
-          app_net:
 
-
-    consul:
-        image: bitnami/consul:latest
-        ports:
-            - 8300:8300
-            - 8301:8301
-            - 8301:8301/udp
-            - 8500:8500
-            - 8600:8600
-            - 8600:8600/udp
-        networks:
-            - app_net
-
-#     traefik:
-#         image: traefik:v2.2
-#         command: --api.insecure=true --providers.docker
-#         depends_on:
-#             - micro-ci-events
+#     rabbitmq:
+#         image: rabbitmq:3-management-alpine
+#         restart: on-failure:10
+#         environment:
+#             RABBITMQ_ERLANG_COOKIE: QKSHDLBKSSBCLBSLU
+#             RABBITMQ_DEFAULT_USER: admin
+#             RABBITMQ_DEFAULT_PASS: admin
+#             RABBITMQ_DEFAULT_VHOST: /
 #         ports:
-#             - 83:80
-#             - 8084:8080
-#         volumes:
-#             - /var/run/docker.sock:/var/run/docker.sock
-#             - ../../traefik.conf/traefik.toml:/traefik.toml
+#             - 5672:5672
+#             - 15672:15672
 #         networks:
-#             app_net:
+#           app_net:
 
 
+#     consul:
+#         image: bitnami/consul:latest
+#         ports:
+#             - 8300:8300
+#             - 8301:8301
+#             - 8301:8301/udp
+#             - 8500:8500
+#             - 8600:8600
+#             - 8600:8600/udp
+#         networks:
+#             - app_net
 
-    adminer:
-        image: adminer
-        restart: always
+    traefik:
+        image: traefik:v2.2
+        command: --consul --consul.endpoint=127.0.0.1:8500
         ports:
-            - '8083:8080'
-        depends_on:
-            - mysql1
+            - 83:80
+            - 8480:8080
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ../../traefik.conf/traefik.toml:/traefik.toml
         networks:
-            db_net:
+            app_net:
+
+
+
+#     adminer:
+#         image: adminer
+#         restart: always
+#         ports:
+#             - '8083:8080'
+#         depends_on:
+#             - mysql1
+#         networks:
+#             db_net:
 
 
 volumes:

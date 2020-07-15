@@ -1,6 +1,6 @@
 FROM python:3.7.4-alpine3.10
 
-RUN mkdir /events && cd events && mkdir /app
+RUN mkdir /events && cd events && mkdir /app && mkdir /rabbitmq
 
 WORKDIR /events
 
@@ -11,6 +11,7 @@ RUN pip install wheel
 RUN pip install -r app/requirements.txt
 
 COPY app /events/app
+COPY app/message_broker /events/rabbitmq
 COPY app.py /events
 COPY boot.sh /events
 
@@ -21,6 +22,7 @@ RUN chmod +x /events/boot.sh
 
 EXPOSE 5000
 
+#CMD /wait && /events/boot.sh
 CMD ["python", "app.py"]
 
 

@@ -1,0 +1,52 @@
+[entryPoints]
+    [entryPoints.http]
+        address = ":8080"
+    [entryPoints.traefik]
+        address = ":8081"
+
+
+[api]
+    dashboard = true
+    debug = false
+    insecure = true
+
+
+[consulCatalog]
+
+    # Consul server endpoint.
+
+    endpoint = "127.0.0.1:8500"
+
+    # Expose Consul catalog services by default in Traefik.
+
+    exposedByDefault = false
+
+    # Allow Consul server to serve the catalog reads regardless of whether it is the leader.
+
+    stale = false
+
+    # Default base domain used for the frontend rules.
+
+    domain = "consul.localhost"
+
+    # Keep a Consul node only if all checks status are passing
+    # If true, only the Consul nodes with checks status 'passing' will be kept.
+    # if false, only the Consul nodes with checks status 'passing' or 'warning' will be kept.
+
+    strictChecks = true
+
+    # Prefix for Consul catalog tags.
+
+    prefix = "traefik"
+
+
+[global]
+    sendAnonymousUsage = false
+
+
+[log]
+    level = "INFO"
+    format = "common"
+
+
+

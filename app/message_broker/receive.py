@@ -1,7 +1,7 @@
 from app import db
 from app.model.model import Command, Project
-import pika
-import json
+import pika, threading
+import json, os
 
 
 class MessageReceiver(object):
