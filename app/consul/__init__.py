@@ -1,0 +1,1 @@
+from app.consul.consul_manager import ConsulManager

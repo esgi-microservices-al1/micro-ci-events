@@ -3,6 +3,7 @@ from app.controller.controller import Index, Event
 from app.message_broker.send import MessageSender
 from app.message_broker.receive import MessageReceiver
 from app.model.model import Project, Command
+from app.consul.consul_manager import ConsulManager
 import os
 
 
@@ -30,11 +31,17 @@ def consume_message():
     receiver.run()
 
 
+def register_service_to_consul():
+    c_manager = ConsulManager(os.getenv("CONSUL_HOST", "consul"))
+    c_manager.register()
+
+
 with app.app_context():
     db.create_all()
     #generate_message()
 
 
 if __name__ == '__main__':
+    register_service_to_consul()
     app.run(host="0.0.0.0", port=5000, debug=True)
     consume_message()
