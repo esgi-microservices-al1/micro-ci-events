@@ -12,10 +12,15 @@ RUN pip install -r app/requirements.txt
 
 COPY app /events/app
 COPY app.py /events
+COPY boot.sh /events
+
+ENV WAIT_VERSION 2.7.2
+ADD https://github.com/ufoscout/docker-compose-wait/releases/download/$WAIT_VERSION/wait /wait
+RUN chmod +x /wait
+RUN chmod +x /events/boot.sh
 
 EXPOSE 5000
 
-ENTRYPOINT ["python"]
-CMD ["app.py"]
+CMD ["python", "app.py"]
 
 

@@ -11,8 +11,7 @@ services:
         command: ndb_mgmd
         networks:
             db_net:
-                #ipv4_address: 192.168.0.2
-
+                ipv4_address: 192.168.0.2
 
     ndb1:
         image: mysql/mysql-cluster:latest
@@ -25,7 +24,7 @@ services:
             - management1
         networks:
             db_net:
-                #ipv4_address: 192.168.0.3
+                ipv4_address: 192.168.0.3
 
 
     ndb2:
@@ -39,7 +38,7 @@ services:
             - management1
         networks:
             db_net:
-                #ipv4_address: 192.168.0.4
+                ipv4_address: 192.168.0.4
 
 
     mysql1:
@@ -63,19 +62,38 @@ services:
         networks:
             app_net:
             db_net:
-                #ipv4_address: 192.168.0.10
+                ipv4_address: 192.168.0.5
 
 
     micro-ci-events:
-        image: oceanize/flask_app:latest
+        image: ci-events:latest
         build:
             context: ../../.
             dockerfile: Dockerfile
+        command: sh -c "/wait && python app.py"
         depends_on:
             - mysql1
+            - rabbitmq
+            - adminer
+            - consul
+        links:
+            - mysql1
+            - rabbitmq
+            - adminer
+            - consul
         ports:
             - 5000:5000
         restart: always
+        environment:
+            DB_NAME: micro-ci-events
+            DB_USER: micro-ci-events
+            DB_PASSWORD: micro-ci-events
+            DB_HOST: mysql1
+            WAIT_HOSTS: mysql1:3306
+            WAIT_HOSTS_TIMEOUT: 300
+            WAIT_SLEEP_INTERVAL: 30
+            WAIT_HOST_CONNECT_TIMEOUT: 30
+            RABBIT_MQ_HOST: rabbitmq
         volumes:
             - ../../app:/events/app
         networks:
@@ -96,20 +114,31 @@ services:
           app_net:
 
 
-
-    traefik:
-        image: traefik:v2.2
-        command: --api.insecure=true --providers.docker
-        depends_on:
-            - micro-ci-events
+    consul:
+        image: bitnami/consul:latest
         ports:
-            - 83:80
-            - 8084:8080
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - ../../traefik.conf/traefik.toml:/traefik.toml
+            - 8300:8300
+            - 8301:8301
+            - 8301:8301/udp
+            - 8500:8500
+            - 8600:8600
+            - 8600:8600/udp
         networks:
-            app_net:
+            - app_net
+
+#     traefik:
+#         image: traefik:v2.2
+#         command: --api.insecure=true --providers.docker
+#         depends_on:
+#             - micro-ci-events
+#         ports:
+#             - 83:80
+#             - 8084:8080
+#         volumes:
+#             - /var/run/docker.sock:/var/run/docker.sock
+#             - ../../traefik.conf/traefik.toml:/traefik.toml
+#         networks:
+#             app_net:
 
 
 
@@ -129,11 +158,12 @@ volumes:
     ndb1_data:
     ndb2_data:
 
+
 networks:
     app_net:
         driver: bridge
     db_net:
         ipam:
             driver: default
-          #config:
-            #- subnet: 192.168.0.0/24
+            config:
+                - subnet: 192.168.0.0/24

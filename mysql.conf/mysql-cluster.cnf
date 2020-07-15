@@ -36,4 +36,4 @@ datadir=/var/lib/mysql
 
 [mysqld]
 NodeId=4
-hostname=192.168.0.10
+hostname=192.168.0.5
